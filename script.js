@@ -1,39 +1,42 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const button = document.getElementById("download-images-button");
   const output = document.getElementById("output");
-  const btn = document.getElementById("download-images-button");
-  const loading = document.getElementById("loading");
-  const errorDiv = document.getElementById("error");
 
-  const images = [
-    { url: "https://picsum.photos/id/237/200/300" },
-    { url: "https://picsum.photos/id/238/200/300" },
-    { url: "https://picsum.photos/id/239/200/300" },
-  ];
-
-  function downloadImage(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-    });
+  // Ensure button and output exist
+  if (!button || !output) {
+    console.error("Missing button or output element in HTML!");
+    return;
   }
 
-  async function downloadImages() {
-    output.innerHTML = "";
-    errorDiv.innerHTML = "";
-    loading.style.display = "block";
+  button.addEventListener("click", async () => {
+    output.innerHTML = ""; // Clear previous images
+
+    const imageUrls = [
+      "https://picsum.photos/id/237/200/300",
+      "https://picsum.photos/id/238/200/300",
+      "https://picsum.photos/id/239/200/300",
+    ];
 
     try {
-      const promises = images.map((imgObj) => downloadImage(imgObj.url));
-      const downloadedImages = await Promise.all(promises);
-      loading.style.display = "none";
-      downloadedImages.forEach((img) => output.appendChild(img));
-    } catch (err) {
-      loading.style.display = "none";
-      errorDiv.textContent = err.message;
-    }
-  }
+      // Fetch all images in parallel
+      const imagePromises = imageUrls.map(async (url) => {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+        return url; // we can directly return url since picsum allows hotlinking
+      });
 
-  btn.addEventListener("click", downloadImages);
+      const results = await Promise.all(imagePromises);
+
+      // Display images
+      results.forEach((url) => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Random";
+        img.style.margin = "10px";
+        output.appendChild(img);
+      });
+    } catch (error) {
+      console.error("Error loading images:", error);
+    }
+  });
 });
